@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelling Quest - Word Adventure</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Trebuchet MS',Arial,sans-serif;background:linear-gradient(135deg,#b7edff,#e7f9dc);color:#24365b;text-align:center}
+header{padding:24px 12px 12px}
+h1{font-size:clamp(32px,7vw,55px);margin:5px;color:#263d70;text-shadow:2px 3px white}
+.subtitle{font-weight:bold;letter-spacing:2px}
+main{max-width:760px;margin:15px auto;padding:12px}
+.card{background:#fff;border-radius:25px;padding:25px 18px;box-shadow:0 8px 0 #b6d6df}
+.scene{font-size:75px;margin:12px}
+h2{font-size:25px}
+p{line-height:1.6}
+button{border:0;border-radius:14px;padding:13px 18px;margin:6px;background:#ff709e;color:white;font-weight:bold;font-size:16px;cursor:pointer;box-shadow:0 4px #d34f7b}
+button:active{transform:translateY(3px);box-shadow:none}
+.blue{background:#54b9e8;box-shadow:0 4px #3288b5}
+.green{background:#55c99a;box-shadow:0 4px #29966d}
+.gold{background:#f5bd45;box-shadow:0 4px #bd851d;color:#503900}
+.choice{background:#eef8ff;color:#24365b;box-shadow:0 4px #c5e2ef;border:2px solid #d4eaf2;min-width:100px}
+.choices{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:18px 0}
+input{width:min(90%,330px);padding:14px;border:3px solid #b8dce9;border-radius:13px;font-size:21px;text-align:center;font-weight:bold;letter-spacing:2px}
+.tiles{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin:18px}
+.tile{background:#fff1bd;border:2px solid #f1d47c;border-radius:10px;padding:11px 14px;font-size:23px;font-weight:bold;cursor:pointer}
+.hud{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:12px}
+.pill{background:white;padding:9px 15px;border-radius:30px;font-weight:bold}
+.progress{height:12px;background:#d9e8eb;border-radius:20px;margin:18px auto;max-width:420px;overflow:hidden}
+.bar{height:100%;width:0;background:#55c99a;transition:.3s}
+.feedback{font-size:18px;font-weight:bold;min-height:32px;margin:12px}
+.small{font-size:13px;color:#70809b}
+</style>
+</head>
+<body>
+<header>
+<div style="font-size:38px">🗺️ 🌈 ⭐</div>
+<h1>SPELLING QUEST</h1>
+<div class="subtitle">THE WORD ADVENTURE</div>
+<p>Y1 KAHURIPAN • WEEK 7</p>
+</header>
+<main>
+<div class="hud">
+<div class="pill">⭐ Score: <span id="score">0</span></div>
+<div class="pill">❤️ Lives: <span id="lives">3</span></div>
+<div class="pill">🏆 Word: <span id="number">0</span>/10</div>
+</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<section class="card" id="game">
+<div class="scene">🏕️</div>
+<h2>Welcome, Word Explorer!</h2>
+<p>Are you ready for an exciting spelling adventure?</p>
+<p>Complete the challenges, collect stars, cross bridges, and find the hidden treasure!</p>
+<p><b>Your mission:</b> Spell 10 English words correctly!</p>
+<button onclick="start()">🚀 START ADVENTURE</button>
+</section>
+</main>
+<script>
+const words=[
+{w:"leaf",e:"🍃",hint:"A green part of a plant."},
+{w:"lemon",e:"🍋",hint:"A yellow, sour fruit."},
+{w:"letter",e:"✉️",hint:"A written message."},
+{w:"house",e:"🏠",hint:"A place where people live."},
+{w:"hair",e:"💇",hint:"It grows on your head."},
+{w:"hat",e:"🎩",hint:"You wear it on your head."},
+{w:"helmet",e:"⛑️",hint:"It protects your head."},
+{w:"ladder",e:"🪜",hint:"You climb it to reach high places."},
+{w:"lion",e:"🦁",hint:"The king of the jungle."},
+{w:"hammer",e:"🔨",hint:"A tool used to hit nails."}
+];
+let score=0,lives=3,index=0,letters=[];
+const $=id=>document.getElementById(id);
+function say(word){
+if(!window.speechSynthesis){alert("Audio is not supported in this browser.");return}
+speechSynthesis.cancel();
+let u=new SpeechSynthesisUtterance(word);
+u.lang="en-US";u.rate=.78;speechSynthesis.speak(u);
+}
+function start(){
+score=0;lives=3;index=0;
+update();show();
+}
+function update(){
+$("score").textContent=score;
+$("lives").textContent=lives;
+$("number").textContent=index;
+$("bar").style.width=(index/10*100)+"%";
+}
+function show(){
+if(index>=10){finish();return}
+update();
+let item=words[index],mode=index%5;
+let title=["Picture Challenge","Listen & Spell","Missing Letters Bridge","Word Scramble","Spelling Race"][mode];
+let html=`<div class="scene">${item.e}</div>
+<div class="small">CHALLENGE ${mode+1} • ${title.toUpperCase()}</div>`;
+if(mode===0){
+let options=[item.w,...words.filter(x=>x.w!==item.w).sort(()=>Math.random()-.5).slice(0,2).map(x=>x.w)].sort(()=>Math.random()-.5);
+html+=`<h2>Which word matches the picture?</h2>
+<p>${item.hint}</p><div class="choices">`;
+options.forEach(x=>html+=`<button class="choice" onclick="check('${x}')">${x}</button>`);
+html+="</div>";
+}
+if(mode===1){
+html+=`<h2>Listen carefully!</h2>
+<p>Listen to the word and spell it correctly.</p>
+<button class="blue" onclick="say('${item.w}')">🔊 LISTEN TO THE WORD</button><br>
+<input id="answer" placeholder="Type your answer" autocomplete="off">
+<br><button onclick="checkInput()">CHECK SPELLING</button>`;
+}
+if(mode===2){
+let missing=Math.floor(Math.random()*item.w.length);
+let pattern=item.w.split("").map((c,i)=>i===missing?"_":c).join(" ");
+html+=`<h2>Cross the Missing Letters Bridge!</h2>
+<p>One letter is missing. Complete the word!</p>
+<div class="tiles">${pattern.split(" ").map(c=>`<span class="tile">${c}</span>`).join("")}</div>
+<input id="answer" maxlength="1" placeholder="Missing letter">
+<br><button class="green" onclick="checkMissing('${item.w[missing]}')">CROSS THE BRIDGE</button>`;
+}
+if(mode===3){
+letters=item.w.split("").sort(()=>Math.random()-.5);
+if(letters.join("")===item.w)letters.reverse();
+html+=`<h2>Build the correct word!</h2>
+<p>Tap the letters in the correct order.</p>
+<div class="tiles" id="built"></div><div class="choices">`;
+letters.forEach((c,i)=>html+=`<button class="choice" id="t${i}" onclick="add('${c}',${i})">${c}</button>`);
+html+=`</div><button class="green" onclick="checkBuilt()">UNLOCK THE TREASURE</button>
+<button class="blue" onclick="show()">RESET</button>`;
+}
+if(mode===4){
+html+=`<h2>Spelling Obstacle Race!</h2>
+<p>Listen and type the word before the dragon catches you!</p>
+<button class="blue" onclick="say('${item.w}')">🔊 PLAY WORD</button><br>
+<input id="answer" placeholder="Spell the word">
+<br><button class="gold" onclick="checkInput()">BEAT THE DRAGON!</button>`;
+}
+html+=`<div class="feedback" id="feedback"></div>
+<p class="small">⭐ Complete each challenge to collect your stars!</p>`;
+$("game").innerHTML=html;
+}
+function correct(){
+score+=10;
+update();
+$("feedback").textContent="🎉 AMAZING! PERFECT SPELLING! +10 STARS";
+$("feedback").style.color="#15966b";
+setTimeout(()=>{index++;show()},1100);
+}
+function wrong(){
+lives--;
+update();
+$("feedback").textContent="💛 TRY AGAIN! YOU CAN DO IT!";
+$("feedback").style.color="#d65d76";
+if(lives<=0){
+$("feedback").textContent="GAME OVER! LET'S TRY AGAIN!";
+setTimeout(finish,1200);
+}
+}
+function check(v){if(v===words[index].w)correct();else wrong()}
+function checkInput(){
+let v=$("answer").value.trim().toLowerCase();
+check(v);
+}
+function checkMissing(letter){
+if($("answer").value.trim().toLowerCase()===letter)correct();
+else wrong();
+}
+function add(c,i){
+letters.splice(i,1,null);
+$("t"+i).disabled=true;
+$("built").innerHTML=letters.filter(x=>x!==null).map(c=>`<span class="tile">${c}</span>`).join("");
+}
+function checkBuilt(){
+let answer=$("built").innerText.toLowerCase().replace(/\s/g,"");
+check(answer);
+}
+function finish(){
+let won=index>=10;
+$("game").innerHTML=`
+<div class="scene">${won?"🏆🎉":"💪🌟"}</div>
+<h2>${won?"YOU ARE A SPELLING CHAMPION!":"GREAT EFFORT, WORD EXPLORER!"}</h2>
+<p>Your score: <b>${score}/100</b></p>
+<p>${won?"You found the treasure! Keep practising your spelling words!":"Never give up! Practise and try again!"}</p>
+<button onclick="start()">🔁 PLAY AGAIN</button>
+<button class="blue" onclick="say('Amazing work! You are a spelling superstar!')">🔊 HEAR PRAISE</button>`;
+$("bar").style.width=(index/10*100)+"%";
+}
+</script>
+</body>
+</html>
